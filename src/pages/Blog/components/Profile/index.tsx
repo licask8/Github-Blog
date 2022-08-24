@@ -3,37 +3,86 @@ import { ExternalLink } from "../../../../components/ExternalLink";
 import { ProfileContainer, ProfileDetails, ProfilePicture } from "./styles";
 import { faGithub} from '@fortawesome/free-brands-svg-icons'
 import { faBuilding, faUserGroup } from "@fortawesome/free-solid-svg-icons";
+import { useCallback, useEffect, useState } from "react";
+import { api } from "../../../../lib/axios";
+import { Spinner } from "../../../../components/Spinner";
+
+
+const username = import.meta.env.VITE_GITHUB_USERNAME;
+
+
+interface ProfileData {
+    login: string;
+    bio: string;
+    avatar_url: string;
+    html_url: string;
+    name: string;
+    company?: string;
+    followers: number;
+}
 
 export function Profile() {
+    const [profileData, setProfileData] = useState<ProfileData>({} as ProfileData)
+    const [loading, setLoading] = useState(true)
+
+    const getProfileData = useCallback(async () => {
+        try {
+            setLoading(true)
+
+            const response = await api.get(`/users/${username}`)
+            setProfileData(response.data)
+         
+
+        } finally {
+            setLoading(false)
+        }
+    }, [profileData])
+
+    useEffect(() => {
+        getProfileData()
+    }, [])
+
+
     return (
+
         <ProfileContainer>
-            <ProfilePicture src="https://github.com/licask8.png" />
+           {loading ? (
+            <Spinner />
+           ): (
+            <>
+                 <ProfilePicture src={profileData.avatar_url} />
 
             <ProfileDetails >
                 <header>
-                    <h1>Elielson Francisco </h1>
+                    <h1>{profileData.name} </h1>
 
-                    <ExternalLink text="Github" />
+                    <ExternalLink text="Github" href={profileData.html_url} target="_blank" />
                 </header>
 
-                <p> Tristique volutpat pulvinar vel massa, pellentesque egestas. Eu viverra massa quam dignissim aenean malesuada suscipit. Nunc, volutpat pulvinar vel mass.</p>
+                <p> {profileData.bio} </p>
 
                 <ul>
                     <li>
                         <FontAwesomeIcon icon={faGithub}/>
-                       Likask8
+                    {profileData.login}
                     </li>
-                    <li>
+
+                        {profileData?.company && (
+                        <li>
                         <FontAwesomeIcon icon={faBuilding}/>
-                       Desempregado
+                    {profileData.company}
                     </li>
+                    )}
+
                     <li>
                         <FontAwesomeIcon icon={faUserGroup}/>
-                       123 seguidores
+                    {profileData.followers} seguidores
                     </li>
                 </ul>
 
             </ProfileDetails>
+            </>
+           )}
         </ProfileContainer>
     )
 }
